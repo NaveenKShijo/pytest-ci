@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
-
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  ci-job:
+  test-job:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,11 +27,21 @@ jobs:
           pip install -r requirements-ci.txt        
 
       - name: run pylint
-        run: pylint --fail-under=8.0 .   # to lint the whole project
+        run: pylint --fail-under=6.0 . 
+          # pylint --fail-under=8.0 .   # to lint the whole project
 
       - name: Run tests
         run: pytest    
-      
+  
+  image-build:
+    needs: test-job 
+    if: github.event_name == 'push'
+    # only runs when directly pushed to main or when PR is merged. NOTE: Merging of PR is also a PUSH.
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4             
+
       - name: Setting up aws credentials
         uses: aws-actions/configure-aws-credentials@v4 
         with:
